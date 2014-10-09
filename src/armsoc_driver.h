@@ -135,6 +135,10 @@ struct ARMSOCRec {
 	/** Scan-out buffer. */
 	struct armsoc_bo		*scanout;
 
+	/** A fake root pixmap BO which we use for any applications that draw
+	 * unredirected. */
+	struct armsoc_bo *fake_root_pixmap;
+
 	/** Pointer to the options for this screen. */
 	OptionInfoPtr		pOptionInfo;
 
@@ -217,5 +221,6 @@ void ARMSOCDRI2SwapComplete(struct ARMSOCDRISwapCmd *cmd);
  * DRI2 util functions..
  */
 void set_scanout_bo(ScrnInfoPtr pScrn, struct armsoc_bo *bo);
+void set_fake_scanout_bo(ScrnInfoPtr pScrn);
 
 #endif /* __ARMSOC_DRV_H__ */

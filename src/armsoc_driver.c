@@ -1237,6 +1237,11 @@ ARMSOCCloseScreen(CLOSE_SCREEN_ARGS_DECL)
 		if (pARMSOC->pARMSOCEXA->CloseScreen)
 			pARMSOC->pARMSOCEXA->CloseScreen(CLOSE_SCREEN_ARGS);
 
+	if (pARMSOC->fake_root_pixmap) {
+		armsoc_bo_unreference(pARMSOC->fake_root_pixmap);
+		pARMSOC->fake_root_pixmap = NULL;
+	}
+
 	armsoc_bo_unreference(pARMSOC->scanout);
 	pARMSOC->scanout = NULL;
 

@@ -1673,6 +1673,40 @@ static Bool resize_scanout_bo(ScrnInfoPtr pScrn, int width, int height)
 	return TRUE;
 }
 
+void set_fake_scanout_bo(ScrnInfoPtr pScrn)
+{
+	struct ARMSOCRec *pARMSOC = ARMSOCPTR(pScrn);
+	int width, height;
+	xf86CrtcConfigPtr config = XF86_CRTC_CONFIG_PTR(pScrn);
+	xf86OutputPtr output = config->output[config->compat_output];
+	xf86CrtcPtr crtc = output->crtc;
+
+	if (pARMSOC->scanout == pARMSOC->fake_root_pixmap)
+		return;
+
+	width = armsoc_bo_width(pARMSOC->scanout);
+	height = armsoc_bo_height(pARMSOC->scanout);
+
+	if (pARMSOC->fake_root_pixmap == NULL) {
+		/* allocate new scanout buffer */
+		pARMSOC->fake_root_pixmap = armsoc_bo_new_with_dim(pARMSOC->dev,
+				width, height,
+				pScrn->depth, pScrn->bitsPerPixel,
+				ARMSOC_BO_SCANOUT);
+		armsoc_bo_add_fb(pARMSOC->fake_root_pixmap);
+	} else {
+		if (armsoc_bo_width(pARMSOC->fake_root_pixmap) != width ||
+		    armsoc_bo_height(pARMSOC->fake_root_pixmap) != height) {
+			armsoc_bo_rm_fb(pARMSOC->fake_root_pixmap);
+			armsoc_bo_resize(pARMSOC->fake_root_pixmap, width, height);
+			armsoc_bo_add_fb(pARMSOC->fake_root_pixmap);
+		}
+	}
+
+	set_scanout_bo(pScrn, pARMSOC->fake_root_pixmap);
+	drmmode_set_mode_major(crtc, &crtc->mode, crtc->rotation, crtc->x, crtc->y);
+}
+
 static Bool
 drmmode_xf86crtc_resize(ScrnInfoPtr pScrn, int width, int height)
 {

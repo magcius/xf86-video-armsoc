@@ -449,9 +449,26 @@ ARMSOCPrepareAccess(PixmapPtr pPixmap, int index)
 {
 	struct ARMSOCPixmapPrivRec *priv = exaGetPixmapDriverPrivate(pPixmap);
 	ScrnInfoPtr pScrn = pix2scrn(pPixmap);
+	ScreenPtr pScreen = pScrn->pScreen;
 	struct ARMSOCRec *pARMSOC = ARMSOCPTR(pScrn);
 	int max_retries = 10;
 	_lock_item_s item;
+	PixmapPtr rootPixmap;
+
+	rootPixmap = pScreen->GetScreenPixmap(pScreen);
+
+	/* If we're trying to write to the root pixmap, fake it out. Since Sqwerty
+	 * is not multi-monitor and the only time we unredirect a window is if it's
+	 * full-screen, this means that a plain rendering window has gone full-screen.
+	 *
+	 * Fall back to our plain root window so we don't stomp on Mali's buffers.
+	 */
+	if (pPixmap == rootPixmap && index == EXA_PREPARE_DEST) {
+		set_fake_scanout_bo(pScrn);
+
+		/* Now the root pixmap's header has been modified to our scanout
+		 * buffer, so we should be good to go. */
+	}
 
 	if (!is_accel_pixmap(priv)) {
 		pPixmap->devPrivate.ptr = priv->unaccel;
