@@ -1547,6 +1547,7 @@ void set_scanout_bo(ScrnInfoPtr pScrn, struct armsoc_bo *bo)
 {
 	struct ARMSOCRec *pARMSOC = ARMSOCPTR(pScrn);
 	struct armsoc_bo *old_bo = pARMSOC->scanout;
+	ScreenPtr pScreen = pScrn->pScreen;
 
 	/* It had better have a framebuffer if we're scanning it out */
 	assert(armsoc_bo_get_fb(bo));
@@ -1554,13 +1555,33 @@ void set_scanout_bo(ScrnInfoPtr pScrn, struct armsoc_bo *bo)
 	armsoc_bo_reference(bo);
 	pARMSOC->scanout = bo;
 	armsoc_bo_unreference(old_bo);
+
+	if (pScreen && pScreen->ModifyPixmapHeader) {
+		PixmapPtr rootPixmap = pScreen->GetScreenPixmap(pScreen);
+
+		pScreen->ModifyPixmapHeader(rootPixmap,
+					    pScrn->virtualX, pScrn->virtualY,
+					    pScrn->depth, pScrn->bitsPerPixel,
+					    armsoc_bo_pitch(pARMSOC->scanout),
+					    armsoc_bo_map(pARMSOC->scanout));
+
+		/* Bump the serial number to ensure that all existing DRI2
+		 * buffers are invalidated.
+		 *
+		 * This is particularly required for when the resolution is
+		 * changed and then reverted to the original size without a
+		 * DRI2 client/s getting a new buffer. Without this, the
+		 * drawable is the same size and serial number so the old
+		 * DRI2Buffer will be returned, even though the backing buffer
+		 * has been deleted.
+		 */
+		rootPixmap->drawable.serialNumber = NEXT_SERIAL_NUMBER;
+	}
 }
 
 static Bool resize_scanout_bo(ScrnInfoPtr pScrn, int width, int height)
 {
 	struct ARMSOCRec *pARMSOC = ARMSOCPTR(pScrn);
-	ScreenPtr pScreen = pScrn->pScreen;
-	uint32_t pitch;
 
 	TRACE_ENTER();
 	DEBUG_MSG("Resize: %dx%d", width, height);
@@ -1571,6 +1592,7 @@ static Bool resize_scanout_bo(ScrnInfoPtr pScrn, int width, int height)
 	if ((width != armsoc_bo_width(pARMSOC->scanout))
 	      || (height != armsoc_bo_height(pARMSOC->scanout))
 	      || (pScrn->bitsPerPixel != armsoc_bo_bpp(pARMSOC->scanout))) {
+		uint32_t pitch;
 		struct armsoc_bo *new_scanout;
 
 		/* allocate new scanout buffer */
@@ -1645,29 +1667,8 @@ static Bool resize_scanout_bo(ScrnInfoPtr pScrn, int width, int height)
 			armsoc_bo_unreference(new_scanout);
 		}
 		pScrn->displayWidth = pitch / ((pScrn->bitsPerPixel + 7) / 8);
-	} else
-		pitch = armsoc_bo_pitch(pARMSOC->scanout);
-
-	if (pScreen && pScreen->ModifyPixmapHeader) {
-		PixmapPtr rootPixmap = pScreen->GetScreenPixmap(pScreen);
-
-		pScreen->ModifyPixmapHeader(rootPixmap,
-				pScrn->virtualX, pScrn->virtualY,
-				pScrn->depth, pScrn->bitsPerPixel, pitch,
-				armsoc_bo_map(pARMSOC->scanout));
-
-		/* Bump the serial number to ensure that all existing DRI2
-		 * buffers are invalidated.
-		 *
-		 * This is particularly required for when the resolution is
-		 * changed and then reverted to the original size without a
-		 * DRI2 client/s getting a new buffer. Without this, the
-		 * drawable is the same size and serial number so the old
-		 * DRI2Buffer will be returned, even though the backing buffer
-		 * has been deleted.
-		 */
-		rootPixmap->drawable.serialNumber = NEXT_SERIAL_NUMBER;
 	}
+
 	TRACE_EXIT();
 	return TRUE;
 }
