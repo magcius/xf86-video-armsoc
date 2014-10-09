@@ -585,12 +585,11 @@ ARMSOCDRI2SwapComplete(struct ARMSOCDRISwapCmd *cmd)
 				M_ANY, DixWriteAccess);
 
 		if (status == Success) {
+			exchangebufs(pDraw, cmd->pSrcBuffer, cmd->pDstBuffer);
+
 			if (cmd->type != DRI2_BLIT_COMPLETE &&
 			   (cmd->flags & ARMSOC_SWAP_FAKE_FLIP) == 0) {
 				assert(cmd->type == DRI2_FLIP_COMPLETE);
-				exchangebufs(pDraw, cmd->pSrcBuffer,
-							cmd->pDstBuffer);
-
 				if (cmd->pSrcBuffer->attachment ==
 						DRI2BufferBackLeft)
 					nextBuffer(pDraw,
