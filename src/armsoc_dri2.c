@@ -170,20 +170,18 @@ ARMSOCDRI2CreateBuffer(DrawablePtr pDraw, unsigned int attachment,
 		return NULL;
 	}
 
-	if (attachment == DRI2BufferFrontLeft) {
-		pPixmap = draw2pix(pDraw);
-		pPixmap->refcnt++;
-	} else {
-		pPixmap = createpix(pDraw);
+	if (attachment != DRI2BufferBackLeft) {
+		ERROR_MSG("Mali requested an attachment other than DRI2BufferBackLeft");
+		goto fail;
 	}
 
+	pPixmap = createpix(pDraw);
 	if (!pPixmap) {
-		assert(attachment != DRI2BufferFrontLeft);
 		ERROR_MSG("Failed to create back buffer for window");
 		goto fail;
 	}
 
-	if (attachment == DRI2BufferBackLeft && pARMSOC->driNumBufs > 2) {
+	if (pARMSOC->driNumBufs > 2) {
 		buf->pPixmaps = calloc(pARMSOC->driNumBufs-1,
 				sizeof(PixmapPtr));
 		buf->numPixmaps = pARMSOC->driNumBufs-1;
@@ -215,7 +213,7 @@ ARMSOCDRI2CreateBuffer(DrawablePtr pDraw, unsigned int attachment,
 	DRIBUF(buf)->name = armsoc_bo_name(bo);
 	buf->refcnt = 1;
 
-	if (canflip(pDraw) && attachment != DRI2BufferFrontLeft) {
+	if (canflip(pDraw)) {
 		/* Create an fb around this buffer. This will fail and we will
 		 * fall back to blitting if the display controller hardware
 		 * cannot scan out this buffer (for example, if it doesn't
@@ -231,7 +229,6 @@ ARMSOCDRI2CreateBuffer(DrawablePtr pDraw, unsigned int attachment,
 			WARNING_MSG(
 					"Falling back to blitting a flippable window");
 		}
-	} else {
 	}
 
 	/* Register Pixmap as having a buffer that can be accessed externally,
