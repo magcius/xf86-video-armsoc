@@ -1694,12 +1694,14 @@ void set_fake_scanout_bo(ScrnInfoPtr pScrn)
 				pScrn->depth, pScrn->bitsPerPixel,
 				ARMSOC_BO_SCANOUT);
 		armsoc_bo_add_fb(pARMSOC->fake_root_pixmap);
+		ErrorF("CFO %d %d %p\n", width, height, pARMSOC->fake_root_pixmap);
 	} else {
 		if (armsoc_bo_width(pARMSOC->fake_root_pixmap) != width ||
 		    armsoc_bo_height(pARMSOC->fake_root_pixmap) != height) {
 			armsoc_bo_rm_fb(pARMSOC->fake_root_pixmap);
 			armsoc_bo_resize(pARMSOC->fake_root_pixmap, width, height);
 			armsoc_bo_add_fb(pARMSOC->fake_root_pixmap);
+			ErrorF("RFO %d %d %p\n", width, height, pARMSOC->fake_root_pixmap);
 		}
 	}
 
@@ -1838,6 +1840,7 @@ static void
 page_flip_handler(int fd, unsigned int sequence, unsigned int tv_sec,
 		unsigned int tv_usec, void *user_data)
 {
+	ErrorF("DSC %p\n", user_data);
 	ARMSOCDRI2SwapComplete(user_data);
 }
 
@@ -1868,6 +1871,7 @@ drmmode_page_flip(DrawablePtr draw, uint32_t fb_id, void *priv)
 		if (!config->crtc[i]->enabled)
 			continue;
 
+		ErrorF("DPF %p\n", priv);
 		ret = drmModePageFlip(mode->fd, crtc->crtc_id,
 				fb_id, flags, priv);
 		if (ret) {

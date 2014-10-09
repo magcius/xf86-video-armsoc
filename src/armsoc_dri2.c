@@ -602,6 +602,7 @@ ARMSOCDRI2SwapComplete(struct ARMSOCDRISwapCmd *cmd)
 			if (cmd->type != DRI2_BLIT_COMPLETE &&
 			   (cmd->flags & ARMSOC_SWAP_FAKE_FLIP) == 0) {
 				assert(cmd->type == DRI2_FLIP_COMPLETE);
+				ErrorF("SSO %p\n", boFromBuffer(cmd->pDstBuffer));
 				set_scanout_bo(pScrn,
 					boFromBuffer(cmd->pDstBuffer));
 			}
