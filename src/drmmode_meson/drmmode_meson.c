@@ -23,6 +23,8 @@
 #include "../drmmode_driver.h"
 
 #include "meson_drm.h"
+#include <xf86drm.h>
+#include <xf86drmMode.h>
 
 /* Cursor dimensions
  * Technically we probably don't have any size limit.. since we

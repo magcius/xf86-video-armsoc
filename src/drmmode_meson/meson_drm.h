@@ -24,7 +24,7 @@
 #define __MESON_DRM_H__
 
 #include <stddef.h>
-#include <drm/drm.h>
+#include <drm.h>
 
 struct drm_meson_gem_create_with_ump {
 	uint64_t size;
