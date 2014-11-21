@@ -122,7 +122,6 @@ struct ARMSOCRec {
 
 	/** File descriptor of the connection with the DRM. */
 	int					drmFD;
-	int					umplock_fd;
 
 	char				*deviceName;
 
